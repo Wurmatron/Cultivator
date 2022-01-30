@@ -79,9 +79,36 @@ type HistoryDrives struct {
 	AvgUtilization string `json:"avgUtilization"`
 }
 
+type HistoryPower struct {
+	Avg1h  float64 `json:"avg1h"`
+	Avg3h  float64 `json:"avg3h"`
+	Avg6h  float64 `json:"avg6h"`
+	Avg12h float64 `json:"avg12h"`
+	Avg24h float64 `json:"avg24h"`
+	Avg1w  float64 `json:"avg1w"`
+}
+
 type History struct {
 	Plots    HistoryPlots    `json:"plots"`
 	Plotting HistoryPlotting `json:"plotting"`
 	Node     HistoryNode     `json:"node"`
 	Drives   HistoryDrives   `json:"drives"`
+	Power    HistoryPower    `json:"power"`
+}
+
+type UPS struct {
+	MaxPowerDraw          int64   `json:"maxPowerDraw"`
+	CurrentLoad           int64   `json:"currentLoad"`
+	InputVoltage          float64 `json:"inputVoltage"`
+	OutputVoltage         float64 `json:"outputVoltage"`
+	InputVoltageNominal   float64 `json:"inputVoltageNominal"`
+	Wattage               float64 `json:"wattage"`
+	Model                 string  `json:"model"`
+	Serial                string  `json:"serial"`
+	BatteryVoltage        float64 `json:"batteryVoltage"`
+	BatteryVoltageNominal float64 `json:"BatteryVoltageNominal"`
+	BatteryType           string  `json:"batteryType"`
+	BatteryCharge         int64   `json:"batteryCharge"`
+	BatteryRuntime        int64   `json:"batteryRuntime"`
+	Generated             int64   `json:"generated"`
 }

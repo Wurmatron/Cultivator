@@ -2,6 +2,7 @@ package backend
 
 import (
 	"cultivator.wurmatron.io/backend/config"
+	"cultivator.wurmatron.io/backend/pull"
 	"cultivator.wurmatron.io/backend/routes"
 	"cultivator.wurmatron.io/backend/storage"
 	"github.com/gorilla/mux"
@@ -22,6 +23,7 @@ func Start() {
 	router := mux.NewRouter()
 	log.Println("Listening on '" + GetHost() + "' '" + "http://" + GetHost() + "/'")
 	router = setupRoutes(*router)
+	pull.CheckForTrackedUPSAndStartup()
 	log.Fatal(http.ListenAndServe(GetHost(), router))
 }
 

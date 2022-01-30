@@ -5,6 +5,7 @@ import (
 	"gorm.io/gorm"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -13,11 +14,15 @@ import (
 var Host string
 var Port int64
 var StatusTimeoutInterval int64
+var UPSPollFrequency int64
+var UpsPullLocationIP []string
 
 func LoadOrSetupConfiguration(db *gorm.DB) {
 	Host = findOrSetConfigValue(map[string]interface{}{"type": "backend", "key": "host"}, db, "host", "localhost").Value // TODO Lookup current ip, set as default
 	Port = toInt(findOrSetConfigValue(map[string]interface{}{"type": "backend", "key": "port"}, db, "port", "8123"))
 	StatusTimeoutInterval = toInt(findOrSetConfigValue(map[string]interface{}{"type": "backend", "key": "status_timeout_interval"}, db, "status_timeout_interval", "300"))
+	UPSPollFrequency = toInt(findOrSetConfigValue(map[string]interface{}{"type": "backend", "key": "ups_pull_frequency"}, db, "ups_pull_frequency", "60"))
+	UpsPullLocationIP = strings.Split(findOrSetConfigValue(map[string]interface{}{"type": "backend", "key": "ups_pull_ips"}, db, "ups_pull_ips", "").Value, ",")
 }
 
 func toInt(cfg *model.Configuration) int64 {

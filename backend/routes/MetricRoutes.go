@@ -14,10 +14,12 @@ import (
 
 var NodeStatusCache map[string]model.Node
 var HarvesterStatusCache map[string]model.Harvester
+var UPSStatusCache map[string]model.UPS
 
 func init() {
 	NodeStatusCache = make(map[string]model.Node)
 	HarvesterStatusCache = make(map[string]model.Harvester)
+	UPSStatusCache = make(map[string]model.UPS)
 }
 
 func AddMetricRoutes(router *mux.Router) {
@@ -30,6 +32,9 @@ func AddMetricRoutes(router *mux.Router) {
 	router.HandleFunc("/api/metric/harvester/{id}", HarvesterGet).Methods("GET")
 	router.HandleFunc("/api/metric/harvester", HarvesterGetAll).Methods("GET")
 	router.HandleFunc("/api/metric/harvester", HarvesterGetAll).Methods("GET").Queries("name", "{name}")
+	// UPS
+	router.HandleFunc("/api/metric/ups/{serial}", UPSGet).Methods("GET")
+	router.HandleFunc("/api/metric/ups", UPSGetAll).Methods("GET")
 	// Timeout / Cleanup
 	go removeExpiredCache()
 }
@@ -48,6 +53,13 @@ func removeExpiredCache() {
 				log.Println("Harvester '" + key + "' has not sent a update in '" + strconv.FormatInt(config.StatusTimeoutInterval, 10) + "s' considering it expired / dead!")
 				delete(HarvesterStatusCache, strings.ToLower(key))
 				log.Println(key + " has been removed from the active harvester list")
+			}
+		}
+		for key, val := range UPSStatusCache {
+			if (val.Generated + int64(config.StatusTimeoutInterval)) < time.Now().Unix() {
+				log.Println("UPS '" + key + "' has not been responding in '" + strconv.FormatInt(config.StatusTimeoutInterval, 10) + "s' considering it dead / errored!")
+				delete(UPSStatusCache, strings.ToLower(key))
+				log.Println(key + " has been removed from the active UPS list")
 			}
 		}
 	}
@@ -184,4 +196,42 @@ func UpdateHarvesterStatus(w http.ResponseWriter, r *http.Request) {
 
 func isValidHarvesterStatusUpdate(n model.Harvester) bool {
 	return len(n.Name) > 0 && n.LastSync <= time.Now().Unix() && n.LastSync+(int64(config.StatusTimeoutInterval)*1000) > time.Now().Unix()
+}
+
+func hasUPSStatus(serial string) bool {
+	lower := strings.ToLower(serial)
+	if _, ok := UPSStatusCache[lower]; ok {
+		return true
+	}
+	return false
+}
+
+func UPSGet(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	serial := params["serial"]
+	if hasUPSStatus(serial) {
+		n := UPSStatusCache[strings.ToLower(serial)]
+		w.Header().Set("Content-Type", "application/json")
+		err := json.NewEncoder(w).Encode(n)
+		if err != nil {
+			log.Println("Failed to encode json for ups '" + serial + "'")
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		w.WriteHeader(http.StatusOK)
+	} else {
+		w.WriteHeader(http.StatusNotFound)
+	}
+}
+
+func UPSGetAll(w http.ResponseWriter, r *http.Request) {
+	arr := make([]model.UPS, 0)
+	for _, val := range UPSStatusCache {
+		arr = append(arr, val)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	err := json.NewEncoder(w).Encode(arr)
+	if err != nil {
+		log.Println("Failed to encode json for ups")
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }
