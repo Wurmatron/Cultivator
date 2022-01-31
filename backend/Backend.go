@@ -6,7 +6,6 @@ import (
 	"cultivator.wurmatron.io/backend/routes"
 	"cultivator.wurmatron.io/backend/storage"
 	"github.com/gorilla/mux"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"gorm.io/gorm"
 	"log"
 	"net/http"
@@ -22,7 +21,7 @@ func Start() {
 	config.LoadOrSetupConfiguration(DB)
 	router := mux.NewRouter()
 	log.Println("Listening on '" + GetHost() + "' '" + "http://" + GetHost() + "/'")
-	router = setupRoutes(*router)
+	router = setupRoutes(*router, DB)
 	pull.CheckForTrackedUPSAndStartup()
 	log.Fatal(http.ListenAndServe(GetHost(), router))
 }
@@ -42,9 +41,9 @@ func setupDBConnection() *gorm.DB {
 	return DB
 }
 
-func setupRoutes(router mux.Router) *mux.Router {
+func setupRoutes(router mux.Router, DB *gorm.DB) *mux.Router {
 	// Information
-	router.Handle("/api/metric/prometheus", promhttp.Handler())
-	routes.AddMetricRoutes(&router)
+	//router.Handle("/api/metric/prometheus", promhttp.Handler())
+	routes.AddMetricRoutes(&router, DB)
 	return &router
 }

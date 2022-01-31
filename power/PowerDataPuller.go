@@ -28,13 +28,13 @@ type UPS struct {
 }
 
 const (
-	ups_name = "ups"
+	ups_name = "power"
 	port     = "8090"
 )
 
 func main() {
 	router := http.NewServeMux()
-	router.HandleFunc("/ups/metrics", createJson)
+	router.HandleFunc("/power/metrics", createJson)
 	log.Println("Starting UPS API on :" + port)
 	log.Fatal(http.ListenAndServe(":"+port, router))
 }
@@ -57,14 +57,14 @@ func getRawData() string {
 
 func convertToJson(raw []string) string {
 	ups := UPS{
-		MaxPowerDraw:          getDataInt64(raw, "ups.realpower.nominal"),
-		CurrentLoad:           getDataInt64(raw, "ups.load"),
+		MaxPowerDraw:          getDataInt64(raw, "power.realpower.nominal"),
+		CurrentLoad:           getDataInt64(raw, "power.load"),
 		InputVoltage:          getDataFloat64(raw, "input.voltage"),
 		OutputVoltage:         getDataFloat64(raw, "output.voltage"),
 		InputVoltageNominal:   getDataFloat64(raw, "input.voltage.nominal"),
-		Wattage:               (float64(getDataInt64(raw, "ups.load")) / 100.0) * getDataFloat64(raw, "ups.realpower.nominal"),
-		Model:                 getDataStr(raw, "ups.model"),
-		Serial:                getDataStr(raw, "ups.serial"),
+		Wattage:               (float64(getDataInt64(raw, "power.load")) / 100.0) * getDataFloat64(raw, "power.realpower.nominal"),
+		Model:                 getDataStr(raw, "power.model"),
+		Serial:                getDataStr(raw, "power.serial"),
 		BatteryVoltage:        getDataFloat64(raw, "battery.voltage"),
 		BatteryVoltageNominal: getDataFloat64(raw, "battery.voltage.nominal"),
 		BatteryType:           getDataStr(raw, "battery.type"),

@@ -67,8 +67,7 @@ type HistoryPlotting struct {
 
 type HistoryNode struct {
 	Name        string  `json:"name"`
-	Uptime1d    string  `json:"uptime1d"`
-	Uptime1w    string  `json:"uptime1w"`
+	Uptime      string  `json:"uptime"`
 	MemoryUsage float64 `json:"memoryUsage"`
 	CpuUsage    float64 `json:"cpuUsage"`
 }
@@ -96,7 +95,7 @@ type History struct {
 	Power    HistoryPower    `json:"power"`
 }
 
-type UPS struct {
+type Power struct {
 	MaxPowerDraw          int64   `json:"maxPowerDraw"`
 	CurrentLoad           int64   `json:"currentLoad"`
 	InputVoltage          float64 `json:"inputVoltage"`
