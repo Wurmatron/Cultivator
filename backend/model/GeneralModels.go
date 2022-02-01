@@ -18,13 +18,14 @@ type Node struct {
 
 type Harvester struct {
 	ID               string  `json:"id"`
-	Name             string  `json:"name"`
+	Blockchain       string  `json:"blockchain"`
 	LastSync         int64   `json:"lastSync"`
 	Version          string  `json:"version"`
 	ConnectionStatus string  `json:"connectionStatus"`
 	PlotCount        int64   `json:"plotCount"`
 	PlotSize         string  `json:"plotSize"`
 	Drives           []Drive `json:"drives"`
+	PlotHarvestTime  float64 `json:"plotHarvestTime"`
 }
 
 type Drive struct {

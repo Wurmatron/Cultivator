@@ -158,7 +158,7 @@ func HarvesterGetAll(w http.ResponseWriter, r *http.Request) {
 	nameFilter := r.URL.Query().Get("name")
 	if len(nameFilter) > 0 {
 		for _, val := range HarvesterStatusCache {
-			if strings.EqualFold(nameFilter, val.Name) {
+			if strings.EqualFold(nameFilter, val.Blockchain) {
 				arr = append(arr, val)
 			}
 		}
@@ -201,7 +201,7 @@ func UpdateHarvesterStatus(w http.ResponseWriter, r *http.Request) {
 	}
 	// Process harvester update
 	if isValidHarvesterStatusUpdate(h) {
-		lower := strings.ToLower(h.Name)
+		lower := strings.ToLower(h.Blockchain)
 		if hasHarvesterStatus(lower) {
 			HarvesterHistory = append(HarvesterHistory, HarvesterStatusCache[lower])
 		}
@@ -216,7 +216,7 @@ func UpdateHarvesterStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func isValidHarvesterStatusUpdate(n model.Harvester) bool {
-	return len(n.Name) > 0 && n.LastSync <= time.Now().Unix() && n.LastSync+(int64(config.StatusTimeoutInterval)*1000) > time.Now().Unix()
+	return len(n.Blockchain) > 0 && n.LastSync <= time.Now().Unix() && n.LastSync+(int64(config.StatusTimeoutInterval)*1000) > time.Now().Unix()
 }
 
 func hasUPSStatus(serial string) bool {
@@ -266,7 +266,7 @@ func handleSQLHistory(DB *gorm.DB) {
 		log.Println("Computing Avgs for incremental")
 		go handleNodeHistory(DB)
 		go handleHarvesterHistory(DB)
-		go handleUPSHistory(DB)
+		go handlePowerHistory(DB)
 	}
 }
 
@@ -297,25 +297,26 @@ func handleNodeHistory(DB *gorm.DB) {
 	// Send SQL for Storage
 	sqlMetricsData := make([]model.Metrics, 0)
 	for _, avg := range avgNodeHistory {
-		sqlMetricsData = append(sqlMetricsData, convertToMetrics(avg, "increment")...)
+		sqlMetricsData = append(sqlMetricsData, convertToMetrics(avg, "increment", "node")...)
 	}
-	sqlMetricsData = append(sqlMetricsData, convertToMetrics(nodesAvg, "avg")...)
+	sqlMetricsData = append(sqlMetricsData, convertToMetrics(nodesAvg, "increment_avg", "node")...)
 	DB.Table("metrics").CreateInBatches(sqlMetricsData, 100)
 }
 
-func convertToMetrics(avg model.ComputedNodeAvg, entryType string) []model.Metrics {
+func convertToMetrics(avg model.ComputedNodeAvg, entryType string, style string) []model.Metrics {
 	metrics := make([]model.Metrics, 0)
-	metrics = append(metrics, createMetrics(avg.Name, entryType, "uptime", fmt.Sprintf("%.4f", avg.Uptime)))
-	metrics = append(metrics, createMetrics(avg.Name, entryType, "cpu_usage", fmt.Sprintf("%d", avg.CpuUsage)))
-	metrics = append(metrics, createMetrics(avg.Name, entryType, "plot_count", fmt.Sprintf("%d", avg.PlotCount)))
-	metrics = append(metrics, createMetrics(avg.Name, entryType, "free_memory", fmt.Sprintf("%d", avg.FreeMemory)))
-	metrics = append(metrics, createMetrics(avg.Name, entryType, "db_size", fmt.Sprintf("%d", avg.DbSize)))
+	metrics = append(metrics, createMetrics(avg.Name, style, entryType, "uptime", fmt.Sprintf("%.4f", avg.Uptime)))
+	metrics = append(metrics, createMetrics(avg.Name, style, entryType, "cpu_usage", fmt.Sprintf("%d", avg.CpuUsage)))
+	metrics = append(metrics, createMetrics(avg.Name, style, entryType, "plot_count", fmt.Sprintf("%d", avg.PlotCount)))
+	metrics = append(metrics, createMetrics(avg.Name, style, entryType, "free_memory", fmt.Sprintf("%d", avg.FreeMemory)))
+	metrics = append(metrics, createMetrics(avg.Name, style, entryType, "db_size", fmt.Sprintf("%d", avg.DbSize)))
 	return metrics
 }
 
-func createMetrics(blockchain string, entryType string, t string, val string) model.Metrics {
+func createMetrics(blockchain string, style string, entryType string, t string, val string) model.Metrics {
 	return model.Metrics{
 		Blockchain: strings.ToLower(blockchain),
+		Style:      style,
 		EntryType:  entryType,
 		Type:       t,
 		Value:      val,
@@ -357,9 +358,11 @@ func computeNodeHistory(name string, maxNodeEntries int64) model.ComputedNodeAvg
 }
 
 func handleHarvesterHistory(DB *gorm.DB) {
+	// Compute Individual Avg
 
+	// Computer  Avg
 }
 
-func handleUPSHistory(DB *gorm.DB) {
+func handlePowerHistory(DB *gorm.DB) {
 
 }

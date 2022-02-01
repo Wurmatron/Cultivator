@@ -10,6 +10,7 @@ type Configuration struct {
 
 type Metrics struct {
 	Blockchain string
+	Style      string
 	EntryType  string
 	Type       string
 	Value      string
