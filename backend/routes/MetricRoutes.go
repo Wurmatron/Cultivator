@@ -63,7 +63,7 @@ func removeExpiredCache() {
 		}
 		for key, val := range HarvesterStatusCache {
 			if (val.LastSync + int64(config.StatusTimeoutInterval)) < time.Now().Unix() {
-				log.Println("Harvester '" + key + "' has not sent a update in '" + strconv.FormatInt(config.StatusTimeoutInterval, 10) + "s' considering it expired / dead!")
+				log.Println("Harvester '" + val.ID + "' (" + key + ") has not sent a update in '" + strconv.FormatInt(config.StatusTimeoutInterval, 10) + "s' considering it expired / dead!")
 				HarvesterHistory = append(HarvesterHistory, val)
 				delete(HarvesterStatusCache, strings.ToLower(key))
 				log.Println(key + " has been removed from the active harvester list")
@@ -271,36 +271,40 @@ func handleSQLHistory(DB *gorm.DB) {
 }
 
 func handleNodeHistory(DB *gorm.DB) {
-	// Compute Individual Node Avg
-	totalHistoryPerNode := int64(float64(config.StatusTimeoutInterval) / 4) // TODO Read Node Sync Config
-	avgNodeHistory := map[string]model.ComputedNodeAvg{}
-	for _, node := range NodeHistory {
-		if _, ok := PowerStatusCache[strings.ToLower(node.Name)]; !ok {
-			avgNodeHistory[strings.ToLower(node.Name)] = computeNodeHistory(node.Name, totalHistoryPerNode)
+	if len(NodeHistory) > 0 {
+		// Compute Individual Node Avg
+		totalHistoryPerNode := int64(float64(config.StatusTimeoutInterval) / 4) // TODO Read Node Sync Config
+		avgNodeHistory := map[string]model.ComputedNodeAvg{}
+		for _, node := range NodeHistory {
+			if _, ok := avgNodeHistory[strings.ToLower(node.Name)]; !ok {
+				avgNodeHistory[strings.ToLower(node.Name)] = computeNodeHistory(node.Name, totalHistoryPerNode)
+			}
 		}
+		// Compute Node Avg
+		nodesAvg := model.ComputedNodeAvg{}
+		nodesAvg.Name = "*"
+		for _, nodeAvg := range avgNodeHistory {
+			nodesAvg.CpuUsage = nodeAvg.CpuUsage + nodeAvg.CpuUsage
+			nodesAvg.FreeMemory = nodeAvg.FreeMemory + nodeAvg.FreeMemory
+			nodesAvg.Uptime = nodeAvg.Uptime + nodeAvg.Uptime
+			nodesAvg.PlotCount = nodeAvg.PlotCount + nodeAvg.PlotCount
+			nodesAvg.DbSize = nodeAvg.DbSize + nodeAvg.DbSize
+		}
+		nodesAvg.CpuUsage = nodesAvg.CpuUsage / int64(len(avgNodeHistory))
+		nodesAvg.FreeMemory = nodesAvg.FreeMemory / int64(len(avgNodeHistory))
+		nodesAvg.Uptime = nodesAvg.Uptime / float64(len(avgNodeHistory))
+		nodesAvg.PlotCount = nodesAvg.PlotCount / int64(len(avgNodeHistory))
+		nodesAvg.DbSize = nodesAvg.DbSize / int64(len(avgNodeHistory))
+		// Send SQL for Storage
+		sqlMetricsData := make([]model.Metrics, 0)
+		for _, avg := range avgNodeHistory {
+			sqlMetricsData = append(sqlMetricsData, convertToMetrics(avg, "increment", "node")...)
+		}
+		sqlMetricsData = append(sqlMetricsData, convertToMetrics(nodesAvg, "increment_avg", "node")...)
+		DB.Table("metrics").CreateInBatches(sqlMetricsData, 100)
+	} else {
+		log.Println("No Node History Generated / Reported!")
 	}
-	// Compute Node Avg
-	nodesAvg := model.ComputedNodeAvg{}
-	nodesAvg.Name = "*"
-	for _, nodeAvg := range avgNodeHistory {
-		nodesAvg.CpuUsage = nodeAvg.CpuUsage + nodeAvg.CpuUsage
-		nodesAvg.FreeMemory = nodeAvg.FreeMemory + nodeAvg.FreeMemory
-		nodesAvg.Uptime = nodeAvg.Uptime + nodeAvg.Uptime
-		nodesAvg.PlotCount = nodeAvg.PlotCount + nodeAvg.PlotCount
-		nodesAvg.DbSize = nodeAvg.DbSize + nodeAvg.DbSize
-	}
-	nodesAvg.CpuUsage = nodesAvg.CpuUsage / int64(len(avgNodeHistory))
-	nodesAvg.FreeMemory = nodesAvg.FreeMemory / int64(len(avgNodeHistory))
-	nodesAvg.Uptime = nodesAvg.Uptime / float64(len(avgNodeHistory))
-	nodesAvg.PlotCount = nodesAvg.PlotCount / int64(len(avgNodeHistory))
-	nodesAvg.DbSize = nodesAvg.DbSize / int64(len(avgNodeHistory))
-	// Send SQL for Storage
-	sqlMetricsData := make([]model.Metrics, 0)
-	for _, avg := range avgNodeHistory {
-		sqlMetricsData = append(sqlMetricsData, convertToMetrics(avg, "increment", "node")...)
-	}
-	sqlMetricsData = append(sqlMetricsData, convertToMetrics(nodesAvg, "increment_avg", "node")...)
-	DB.Table("metrics").CreateInBatches(sqlMetricsData, 100)
 }
 
 func convertToMetrics(avg model.ComputedNodeAvg, entryType string, style string) []model.Metrics {
@@ -358,9 +362,126 @@ func computeNodeHistory(name string, maxNodeEntries int64) model.ComputedNodeAvg
 }
 
 func handleHarvesterHistory(DB *gorm.DB) {
-	// Compute Individual Avg
+	if len(HarvesterHistory) > 0 {
+		// Compute Individual Avg
+		avgHarvesterHistory := map[string]model.ComputedHarvesterAvg{}
+		for _, harvester := range HarvesterHistory {
+			if _, ok := avgHarvesterHistory[strings.ToLower(harvester.ID)]; !ok {
+				avgHarvesterHistory[harvester.ID] = computeHarvesterHistory(harvester.ID)
+			}
+		}
+		// Compute Avg (Overall)
+		harvesterAvg := model.ComputedHarvesterAvg{}
+		harvesterAvg.ID = "*"
+		harvesterAvg.Blockchain = "*"
+		allDrives := []model.ComputedDriveAvg{}
+		for _, harvester := range avgHarvesterHistory {
+			harvesterAvg.PlotHarvestTime = harvesterAvg.PlotHarvestTime + harvester.PlotHarvestTime
+			harvesterAvg.PlotCount = harvesterAvg.PlotCount + harvester.PlotCount
+			// Drives
+			allDrives = append(allDrives, harvester.Drives...)
+		}
+		avgDrive := model.ComputedDriveAvg{}
+		avgDrive.Serial = "*"
+		for _, drive := range allDrives {
+			avgDrive.PlotCount = avgDrive.PlotCount + drive.PlotCount
+			avgDrive.FreeSpace = avgDrive.FreeSpace + drive.FreeSpace
+			avgDrive.TotalSpace = avgDrive.TotalSpace + drive.TotalSpace
+			// Smart
+			avgDrive.Smart.MaxTemp = avgDrive.Smart.MaxTemp + drive.Smart.MaxTemp
+			avgDrive.Smart.MinTemp = avgDrive.Smart.MinTemp + drive.Smart.MinTemp
+			avgDrive.Smart.CycleCount = avgDrive.Smart.CycleCount + drive.Smart.CycleCount
+			avgDrive.Smart.CurrentTemp = avgDrive.Smart.CurrentTemp + drive.Smart.CurrentTemp
+			avgDrive.Smart.PowerOnHours = avgDrive.Smart.PowerOnHours + drive.Smart.PowerOnHours
+		}
+		avgDrive.PlotCount = avgDrive.PlotCount / int64(len(allDrives))
+		avgDrive.FreeSpace = avgDrive.FreeSpace / int64(len(allDrives))
+		avgDrive.TotalSpace = avgDrive.TotalSpace / int64(len(allDrives))
+		// Smart
+		avgDrive.Smart.MaxTemp = avgDrive.Smart.MaxTemp / float64(len(allDrives))
+		avgDrive.Smart.MinTemp = avgDrive.Smart.MinTemp / float64(len(allDrives))
+		avgDrive.Smart.CycleCount = avgDrive.Smart.CycleCount / int64(len(allDrives))
+		avgDrive.Smart.CurrentTemp = avgDrive.Smart.CurrentTemp / float64(len(allDrives))
+		avgDrive.Smart.PowerOnHours = avgDrive.Smart.PowerOnHours / int64(len(allDrives))
+		harvesterAvg.Drives = append(harvesterAvg.Drives, avgDrive)
+		// Send SQL for Storage
+		sqlMetricsData := make([]model.Metrics, 0)
+		for _, avg := range avgHarvesterHistory {
+			sqlMetricsData = append(sqlMetricsData, convertToMetricsHarvester(avg, "increment", "harvester")...)
+		}
+		sqlMetricsData = append(sqlMetricsData, convertToMetricsHarvester(harvesterAvg, "increment_avg", "harvester")...)
+		DB.Table("metrics").CreateInBatches(sqlMetricsData, 100)
+	} else {
+		log.Println("No Harvester History Generated / Created!")
+	}
+}
 
-	// Computer  Avg
+func convertToMetricsHarvester(avg model.ComputedHarvesterAvg, entryType string, style string) []model.Metrics {
+	metrics := make([]model.Metrics, 0)
+	metrics = append(metrics, createMetrics(avg.ID, style, entryType, "plot_count", fmt.Sprintf("%d", avg.PlotCount)))
+	metrics = append(metrics, createMetrics(avg.ID, style, entryType, "harvest_time", fmt.Sprintf("%.8f", avg.PlotHarvestTime)))
+	metrics = append(metrics, createMetrics(avg.ID, style, entryType, "blockchain", fmt.Sprintf("%s", avg.Blockchain)))
+	for _, drive := range avg.Drives {
+		metrics = append(metrics, createMetrics(avg.ID, style, entryType, "drive_plot_count_"+drive.Serial, fmt.Sprintf("%d", drive.PlotCount)))
+		metrics = append(metrics, createMetrics(avg.ID, style, entryType, "drive_total_space_"+drive.Serial, fmt.Sprintf("%d", drive.TotalSpace)))
+		metrics = append(metrics, createMetrics(avg.ID, style, entryType, "drive_free_space_"+drive.Serial, fmt.Sprintf("%d", drive.FreeSpace)))
+		metrics = append(metrics, createMetrics(avg.ID, style, entryType, "drive_cycle_count_"+drive.Serial, fmt.Sprintf("%d", drive.Smart.CycleCount)))
+		metrics = append(metrics, createMetrics(avg.ID, style, entryType, "drive_max_temp_"+drive.Serial, fmt.Sprintf("%.4f", drive.Smart.MaxTemp)))
+		metrics = append(metrics, createMetrics(avg.ID, style, entryType, "drive_min_temp_"+drive.Serial, fmt.Sprintf("%.4f", drive.Smart.MinTemp)))
+		metrics = append(metrics, createMetrics(avg.ID, style, entryType, "drive_current_temp_"+drive.Serial, fmt.Sprintf("%.4f", drive.Smart.CurrentTemp)))
+		metrics = append(metrics, createMetrics(avg.ID, style, entryType, "drive_power_on_hours_"+drive.Serial, fmt.Sprintf("%d", drive.Smart.PowerOnHours)))
+	}
+	return metrics
+}
+
+func computeHarvesterHistory(ID string) model.ComputedHarvesterAvg {
+	avg := model.ComputedHarvesterAvg{}
+	avg.ID = ID
+	allDrives := []model.Drive{}
+	for _, harvester := range HarvesterHistory {
+		if strings.EqualFold(harvester.ID, ID) {
+			avg.Blockchain = harvester.Blockchain
+			avg.PlotCount = avg.PlotCount + harvester.PlotCount
+			avg.PlotHarvestTime = avg.PlotHarvestTime + harvester.PlotHarvestTime
+			allDrives = append(allDrives, harvester.Drives...)
+		}
+	}
+	for _, drive := range allDrives {
+		avg.Drives = append(avg.Drives, computeDriveAvg(drive.Serial, allDrives))
+	}
+	// Div by count
+	harvesterEntries := countHarvesterEntries(ID)
+	avg.PlotCount = avg.PlotCount / harvesterEntries
+	avg.PlotHarvestTime = avg.PlotHarvestTime / float64(harvesterEntries)
+	return avg
+}
+
+func countHarvesterEntries(ID string) int64 {
+	count := 0
+	for _, x := range HarvesterHistory {
+		if strings.EqualFold(ID, x.ID) {
+			count++
+		}
+	}
+	return int64(count)
+}
+
+func computeDriveAvg(serial string, drives []model.Drive) model.ComputedDriveAvg {
+	driveAvg := model.ComputedDriveAvg{}
+	driveAvg.Serial = serial
+	for _, drive := range drives {
+		if strings.EqualFold(drive.Serial, serial) {
+			driveAvg.PlotCount = driveAvg.PlotCount + drive.PlotCount
+			driveAvg.TotalSpace = driveAvg.TotalSpace + drive.TotalSpace
+			driveAvg.FreeSpace = driveAvg.FreeSpace + drive.FreeSpace
+			// Smart
+			driveAvg.Smart.CycleCount = driveAvg.Smart.CycleCount + drive.Smart.CycleCount
+			driveAvg.Smart.MaxTemp = driveAvg.Smart.MaxTemp + drive.Smart.MaxTemp
+			driveAvg.Smart.CurrentTemp = driveAvg.Smart.CurrentTemp + drive.Smart.CurrentTemp
+			driveAvg.Smart.PowerOnHours = driveAvg.Smart.PowerOnHours + drive.Smart.PowerOnHours
+		}
+	}
+	return driveAvg
 }
 
 func handlePowerHistory(DB *gorm.DB) {

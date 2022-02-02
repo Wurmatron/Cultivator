@@ -29,6 +29,7 @@ type Harvester struct {
 }
 
 type Drive struct {
+	Serial     string     `json:"serial"`
 	Mount      string     `json:"mount"`
 	TotalSpace int64      `json:"totalSpace"`
 	FreeSpace  int64      `json:"freeSpace"`

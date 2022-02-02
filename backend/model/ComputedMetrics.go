@@ -13,12 +13,12 @@ type ComputedHarvesterAvg struct {
 	ID              string
 	Blockchain      string
 	PlotCount       int64
-	PlotSize        string
 	Drives          []ComputedDriveAvg
 	PlotHarvestTime float64
 }
 
 type ComputedDriveAvg struct {
+	Serial     string
 	TotalSpace int64
 	FreeSpace  int64
 	Smart      ComputedSmartAvg
@@ -29,7 +29,7 @@ type ComputedSmartAvg struct {
 	MaxTemp      float64
 	MinTemp      float64
 	CurrentTemp  float64
-	PowerOnHours float64
+	PowerOnHours int64
 	CycleCount   int64
 }
 
