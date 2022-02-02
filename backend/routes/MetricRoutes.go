@@ -469,8 +469,10 @@ func countHarvesterEntries(ID string) int64 {
 func computeDriveAvg(serial string, drives []model.Drive) model.ComputedDriveAvg {
 	driveAvg := model.ComputedDriveAvg{}
 	driveAvg.Serial = serial
+	count := 0
 	for _, drive := range drives {
 		if strings.EqualFold(drive.Serial, serial) {
+			count++
 			driveAvg.PlotCount = driveAvg.PlotCount + drive.PlotCount
 			driveAvg.TotalSpace = driveAvg.TotalSpace + drive.TotalSpace
 			driveAvg.FreeSpace = driveAvg.FreeSpace + drive.FreeSpace
@@ -481,6 +483,13 @@ func computeDriveAvg(serial string, drives []model.Drive) model.ComputedDriveAvg
 			driveAvg.Smart.PowerOnHours = driveAvg.Smart.PowerOnHours + drive.Smart.PowerOnHours
 		}
 	}
+	driveAvg.PlotCount = driveAvg.PlotCount / int64(count)
+	driveAvg.TotalSpace = driveAvg.TotalSpace / int64(count)
+	driveAvg.FreeSpace = driveAvg.FreeSpace / int64(count)
+	driveAvg.Smart.CycleCount = driveAvg.Smart.CycleCount / int64(count)
+	driveAvg.Smart.MaxTemp = driveAvg.Smart.MaxTemp / float64(count)
+	driveAvg.Smart.CurrentTemp = driveAvg.Smart.CurrentTemp / float64(count)
+	driveAvg.Smart.PowerOnHours = driveAvg.Smart.PowerOnHours / int64(count)
 	return driveAvg
 }
 
