@@ -43,7 +43,7 @@ func UpdatePowerData() {
 		if hasPowerStatus(ups.Serial) {
 			routes.PowerHistory = append(routes.PowerHistory, routes.PowerStatusCache[ups.Serial])
 		}
-		routes.PowerStatusCache[ups.Serial] = ups
+		routes.PowerStatusCache[strings.ToLower(ups.Serial)] = ups
 	}
 }
 

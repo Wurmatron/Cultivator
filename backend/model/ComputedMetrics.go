@@ -34,7 +34,7 @@ type ComputedSmartAvg struct {
 }
 
 type ComputedPowerAvg struct {
-	MaxPowerDraw   int64
+	Serial         string
 	Wattage        float64
 	CurrentLoad    int64
 	InputVoltage   float64

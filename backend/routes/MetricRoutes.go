@@ -494,5 +494,62 @@ func computeDriveAvg(serial string, drives []model.Drive) model.ComputedDriveAvg
 }
 
 func handlePowerHistory(DB *gorm.DB) {
+	if len(PowerHistory) > 0 {
+		// Compute Individual Power
+		avgPowerHistory := map[string]model.ComputedPowerAvg{}
+		for _, psu := range PowerHistory {
+			if _, ok := avgPowerHistory[strings.ToLower(psu.Serial)]; !ok {
+				avgPowerHistory[psu.Serial] = computePowerAvg(psu.Serial)
+			}
+		}
+		// Compute Overall Power
+		avgPower := model.ComputedPowerAvg{}
+		for _, psu := range avgPowerHistory {
+			avgPower.CurrentLoad = avgPower.CurrentLoad + psu.CurrentLoad
+			avgPower.Wattage = avgPower.Wattage + psu.Wattage
+			avgPower.InputVoltage = avgPower.InputVoltage + psu.InputVoltage
+			avgPower.BatteryVoltage = avgPower.BatteryVoltage + psu.BatteryVoltage
+		}
+		avgPower.CurrentLoad = avgPower.CurrentLoad / int64(len(avgPowerHistory))
+		avgPower.Wattage = avgPower.Wattage / float64(len(avgPowerHistory))
+		avgPower.InputVoltage = avgPower.InputVoltage / float64(len(avgPowerHistory))
+		avgPower.BatteryVoltage = avgPower.BatteryVoltage / float64(len(avgPowerHistory))
+		// Send SQL for Storage
+		sqlMetricsData := make([]model.Metrics, 0)
+		for _, avg := range avgPowerHistory {
+			sqlMetricsData = append(sqlMetricsData, convertToMetricsPower(avg, "increment", "power")...)
+		}
+		sqlMetricsData = append(sqlMetricsData, convertToMetricsPower(avgPower, "increment_avg", "power")...)
+		DB.Table("metrics").CreateInBatches(sqlMetricsData, 100)
+	} else {
+		log.Println("No Power History Generated / Created!")
+	}
+}
 
+func convertToMetricsPower(avg model.ComputedPowerAvg, entryType string, style string) []model.Metrics {
+	metrics := make([]model.Metrics, 0)
+	metrics = append(metrics, createMetrics(avg.Serial, style, entryType, "wattage", fmt.Sprintf("%.4f", avg.Wattage)))
+	metrics = append(metrics, createMetrics(avg.Serial, style, entryType, "input_voltage", fmt.Sprintf("%.4f", avg.InputVoltage)))
+	metrics = append(metrics, createMetrics(avg.Serial, style, entryType, "battery_voltage", fmt.Sprintf("%.4f", avg.BatteryVoltage)))
+	metrics = append(metrics, createMetrics(avg.Serial, style, entryType, "current_load", fmt.Sprintf("%d", avg.CurrentLoad)))
+	return metrics
+}
+
+func computePowerAvg(serial string) model.ComputedPowerAvg {
+	powerAvg := model.ComputedPowerAvg{}
+	count := int64(0)
+	for _, psu := range PowerHistory {
+		if strings.EqualFold(psu.Serial, serial) {
+			powerAvg.CurrentLoad = powerAvg.CurrentLoad + psu.CurrentLoad
+			powerAvg.BatteryVoltage = powerAvg.BatteryVoltage + psu.BatteryVoltage
+			powerAvg.InputVoltage = powerAvg.InputVoltage + psu.InputVoltage
+			powerAvg.Wattage = powerAvg.Wattage + psu.Wattage
+			count++
+		}
+	}
+	powerAvg.CurrentLoad = powerAvg.CurrentLoad / count
+	powerAvg.BatteryVoltage = powerAvg.BatteryVoltage / float64(count)
+	powerAvg.InputVoltage = powerAvg.InputVoltage / float64(count)
+	powerAvg.Wattage = powerAvg.Wattage / float64(count)
+	return powerAvg
 }
