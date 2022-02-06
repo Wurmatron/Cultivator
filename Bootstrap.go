@@ -1,21 +1,27 @@
 package main
 
 import (
-	"cultivator.wurmatron.io/node"
+	"cultivator.wurmatron.io/backend"
 	"flag"
 	"log"
 )
 
+var ConfigurationServer string
+
+func init() {
+	flag.StringVar(&ConfigurationServer, "ip", "localhost", "<server ip or domain>")
+	flag.Parse()
+}
+
 func main() {
 	log.SetPrefix("[Bootstrap] > ")
-	configurationServer := flag.String("configurationServer", "localhost", "<server ip or domain>")
-	log.Println("Connecting to configuration server '" + *configurationServer + "'\n")
-	go ConfigureSystem(*configurationServer)
+	log.Println("Connecting to configuration server '" + ConfigurationServer + "'\n")
+	go ConfigureSystem(ConfigurationServer)
 	select {}
 }
 
 func ConfigureSystem(configServer string) {
 	// TODO Implement
-	//backend.Start()
-	node.Start()
+	backend.Start()
+	//node.Start(configServer)
 }

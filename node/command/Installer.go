@@ -3,25 +3,15 @@ package command
 import (
 	"cultivator.wurmatron.io/backend/model"
 	"log"
-	"os"
-	"os/exec"
 	"strings"
 )
 
 func IsBlockchainInstalled(install model.BlockchainInstallation) bool {
-	return exists(install.InstallDir)
-}
-
-func exists(d string) bool {
-	dir, err := os.Stat(d)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return dir.IsDir()
+	return Exists(install.InstallDir)
 }
 
 func InstallBlockchain(install model.BlockchainInstallation) {
-	if !exists("scripts/install.sh") {
+	if !Exists("scripts/install.sh") {
 		RunCommand("wget", install.ScriptDownloadURL)
 		RunCommand("unzip", strings.ToLower(install.Name)+".zip")
 		RunCommand("rm", strings.ToLower(install.Name)+".zip")
@@ -29,24 +19,20 @@ func InstallBlockchain(install model.BlockchainInstallation) {
 	RunCommand("bash", "scripts/install.sh")
 }
 
+func ConfigureNode(chain model.BlockchainInstallation) {
+	log.Println("Configuring First time system!")
+	RunNodeCommand(chain, "init")
+	RunNodeCommand(chain, "keys generate") // TODO Replace with transfer / mnemonic import
+	RunNodeCommand(chain, "configure -log-level INFO")
+}
+
 func SetupAndRun(install model.BlockchainInstallation) {
 	if IsBlockchainInstalled(install) {
-		// TODO Run
 		log.Println(install.Name + " has already been installed!")
 	} else {
 		log.Println("Starting First Time Setup for '" + install.Name + "' into '" + install.InstallDir + "'")
 		InstallBlockchain(install)
+		ConfigureNode(install)
 	}
-}
-
-func RunCommand(name string, arg ...string) {
-	cmd := exec.Command(name, arg...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
-	err := cmd.Run()
-	if err != nil {
-		log.Println("Failed to run command '" + name + strings.Join(arg, " ") + "'")
-		log.Println(err.Error())
-	}
+	StartNode(install)
 }
