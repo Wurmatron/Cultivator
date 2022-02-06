@@ -113,3 +113,12 @@ type Power struct {
 	BatteryRuntime        int64   `json:"batteryRuntime"`
 	Generated             int64   `json:"generated"`
 }
+
+type BlockchainInstallation struct {
+	Name              string `json:"name"`
+	Github            string `json:"github"`
+	InstallDir        string `json:"installDir"`
+	LogFile           string `json:"logFile"`
+	ScriptDownloadURL string `json:"scriptDownload"`
+	Priority          int64  `json:"priority"`
+}
