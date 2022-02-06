@@ -5,10 +5,15 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 func IsBlockchainInstalled(install model.BlockchainInstallation) bool {
-	dir, err := os.Stat(install.InstallDir)
+	return exists(install.InstallDir)
+}
+
+func exists(d string) bool {
+	dir, err := os.Stat(d)
 	if os.IsNotExist(err) {
 		return false
 	}
@@ -16,12 +21,12 @@ func IsBlockchainInstalled(install model.BlockchainInstallation) bool {
 }
 
 func InstallBlockchain(install model.BlockchainInstallation) {
-	cmd := exec.Command("curl", install.ScriptDownloadURL)
-	if output, err := cmd.Output(); err != nil {
-		log.Println(output)
-	} else {
-		log.Fatal(err)
+	if !exists("scripts/install.sh") {
+		RunCommand("wget", install.ScriptDownloadURL)
+		RunCommand("unzip", strings.ToLower(install.Name)+".zip")
+		RunCommand("rm", strings.ToLower(install.Name)+".zip")
 	}
+	RunCommand("bash", "scripts/install.sh")
 }
 
 func SetupAndRun(install model.BlockchainInstallation) {
@@ -31,5 +36,17 @@ func SetupAndRun(install model.BlockchainInstallation) {
 	} else {
 		log.Println("Starting First Time Setup for '" + install.Name + "' into '" + install.InstallDir + "'")
 		InstallBlockchain(install)
+	}
+}
+
+func RunCommand(name string, arg ...string) {
+	cmd := exec.Command(name, arg...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+	err := cmd.Run()
+	if err != nil {
+		log.Println("Failed to run command '" + name + strings.Join(arg, " ") + "'")
+		log.Println(err.Error())
 	}
 }

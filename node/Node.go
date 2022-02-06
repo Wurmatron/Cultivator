@@ -16,7 +16,7 @@ var CurrentInstallation = model.BlockchainInstallation{
 	Name:              "chia",
 	Github:            "https://github.com/Chia-Network/chia-blockchain",
 	InstallDir:        "chia-blockchain",
-	LogFile:           ".chia/log/debug.log",
+	LogFile:           "~/.chia/mainnet/log/debug.log",
 	ScriptDownloadURL: "https://raw.githubusercontent.com/Wurmatron/Cultivator/main/scripts/chia.zip",
 	Priority:          1,
 }
