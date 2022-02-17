@@ -24,10 +24,11 @@ const (
 var CurrentInstallation = model.BlockchainInstallation{
 	Name:              "chia",
 	Github:            "https://github.com/Chia-Network/chia-blockchain",
-	InstallDir:        "/home/wurmatron/Cultivator/chia-blockchain",
+	InstallDir:        "chia-blockchain",
 	LogFile:           "~/.chia/mainnet/log/debug.log",
 	ScriptDownloadURL: "https://raw.githubusercontent.com/Wurmatron/Cultivator/main/scripts/chia.zip",
 	Priority:          1,
+	ProtectedFiles:    []string{"~/.chia/mainnet/db/blockchain_v1_mainnet.sqlite", "~/.chia/mainnet/wallet/db/"},
 }
 
 func Start(configServer string) {
@@ -35,7 +36,7 @@ func Start(configServer string) {
 	log.Println("Starting up as 'Node'")
 	// TODO Load Configuration
 	log.Println("Running as '" + strings.ToUpper(CurrentInstallation.Name) + "' node!")
-	command.SetupAndRun(CurrentInstallation)
+	command.SetupAndRun(CurrentInstallation, "node")
 	go ScheduleStatusUpdate(configServer)
 }
 
@@ -92,5 +93,4 @@ func SendNodeStatusUpdate(server string) {
 		panic(error)
 	}
 	defer response.Body.Close()
-	log.Println("Status:" + response.Status)
 }

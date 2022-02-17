@@ -24,9 +24,10 @@ func ConfigureNode(chain model.BlockchainInstallation) {
 	RunNodeCommand(chain, "init")
 	RunNodeCommand(chain, "keys generate") // TODO Replace with transfer / mnemonic import
 	RunNodeCommand(chain, "configure -log-level INFO")
+	// TODO Set Log Level To Info
 }
 
-func SetupAndRun(install model.BlockchainInstallation) {
+func SetupAndRun(install model.BlockchainInstallation, runType string) {
 	if IsBlockchainInstalled(install) {
 		log.Println(install.Name + " has already been installed!")
 	} else {
@@ -34,5 +35,10 @@ func SetupAndRun(install model.BlockchainInstallation) {
 		InstallBlockchain(install)
 		ConfigureNode(install)
 	}
-	StartNode(install)
+	if strings.EqualFold("node", runType) {
+		StartNode(install)
+	}
+	if strings.EqualFold("harvester", runType) {
+		StartHarvester(install)
+	}
 }

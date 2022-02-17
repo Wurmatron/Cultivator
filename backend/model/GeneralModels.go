@@ -115,10 +115,11 @@ type Power struct {
 }
 
 type BlockchainInstallation struct {
-	Name              string `json:"name"`
-	Github            string `json:"github"`
-	InstallDir        string `json:"installDir"`
-	LogFile           string `json:"logFile"`
-	ScriptDownloadURL string `json:"scriptDownload"`
-	Priority          int64  `json:"priority"`
+	Name              string   `json:"name"`
+	Github            string   `json:"github"`
+	InstallDir        string   `json:"installDir"`
+	LogFile           string   `json:"logFile"`
+	ScriptDownloadURL string   `json:"scriptDownload"`
+	Priority          int64    `json:"priority"`
+	ProtectedFiles    []string `json:"protectedFiles"`
 }

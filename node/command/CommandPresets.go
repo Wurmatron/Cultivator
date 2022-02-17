@@ -16,7 +16,7 @@ func RunCommand(name string, arg ...string) {
 	cmd.Stdin = os.Stdin
 	err := cmd.Run()
 	if err != nil {
-		log.Println("Failed to run command '" + name + strings.Join(arg, " ") + "'")
+		log.Println("Failed to run command '" + name + " " + strings.Join(arg, " ") + "'")
 		log.Println(err.Error())
 	}
 }
@@ -46,6 +46,10 @@ func StartNode(chain model.BlockchainInstallation) {
 
 func StopNode(chain model.BlockchainInstallation) {
 	RunNodeCommand(chain, "stop node")
+}
+
+func StartHarvester(chain model.BlockchainInstallation) {
+	RunNodeCommand(chain, "start harvester")
 }
 
 func infoCollector(chain model.BlockchainInstallation, command string, prefix string) string {
