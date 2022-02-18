@@ -36,7 +36,7 @@ func SetupAndRun(install model.BlockchainInstallation, runType string) {
 		ConfigureNode(install)
 	}
 	if strings.EqualFold("node", runType) {
-		StartNode(install)
+		StartFarmer(install)
 	}
 	if strings.EqualFold("harvester", runType) {
 		StartHarvester(install)

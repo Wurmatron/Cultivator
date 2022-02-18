@@ -44,6 +44,10 @@ func StartNode(chain model.BlockchainInstallation) {
 	RunNodeCommand(chain, "start node")
 }
 
+func StartFarmer(chain model.BlockchainInstallation) {
+	RunNodeCommand(chain, "start farmer")
+}
+
 func StopNode(chain model.BlockchainInstallation) {
 	RunNodeCommand(chain, "stop node")
 }
