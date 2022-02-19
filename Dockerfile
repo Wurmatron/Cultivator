@@ -23,4 +23,4 @@ RUN apt-get -y install unzip
 RUN apt-get -y install sudo
 RUN go build -o /cultivator/Cultivator
 
-CMD ["./cultivator/Cultivator"]
+CMD ["./Cultivator"]

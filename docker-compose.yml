@@ -1,0 +1,12 @@
+version: "0.0.0"
+services:
+  cultivator-backend:
+    build: .
+    ports:
+      - "8123:8123"
+  postgres:
+    image: "postgres:14.2-alpine"
+    environment:
+      - POSTGRES_USER=cultivator
+      - POSTGRES_PASSWORD=drowssap
+      - POSTGRES_DB=cultivator

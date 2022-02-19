@@ -1,8 +1,7 @@
 package main
 
 import (
-	"cultivator.wurmatron.io/harvester"
-	"cultivator.wurmatron.io/node"
+	"cultivator.wurmatron.io/backend"
 	"flag"
 	"log"
 )
@@ -23,8 +22,8 @@ func main() {
 
 func ConfigureSystem(configServer string) {
 	// TODO Implement
-	//backend.Start()
-	node.Start(configServer)
-	harvester.Start(configServer)
+	backend.Start()
+	//node.Start(configServer)
+	//harvester.Start(configServer)
 	//plotting.Start(configServer)
 }
