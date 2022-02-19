@@ -4,6 +4,7 @@ import (
 	"cultivator.wurmatron.io/backend"
 	"flag"
 	"log"
+	"os"
 )
 
 var ConfigurationServer string
@@ -11,6 +12,9 @@ var ConfigurationServer string
 func init() {
 	flag.StringVar(&ConfigurationServer, "ip", "localhost", "<server ip or domain>")
 	flag.Parse()
+	if len(os.Getenv("backend_ip")) > 0 {
+		ConfigurationServer = os.Getenv("backend_ip")
+	}
 }
 
 func main() {
