@@ -11,12 +11,15 @@ func IsBlockchainInstalled(install model.BlockchainInstallation) bool {
 }
 
 func InstallBlockchain(install model.BlockchainInstallation) {
-	if !Exists("scripts/install.sh") {
+	if !Exists("install.sh") {
 		RunCommand("wget", install.ScriptDownloadURL)
+		RunCommand("ls", "-l")
 		RunCommand("unzip", strings.ToLower(install.Name)+".zip")
+		RunCommand("ls", "-l")
 		RunCommand("rm", strings.ToLower(install.Name)+".zip")
+		RunCommand("ls", "-l")
 	}
-	RunCommand("bash", "scripts/install.sh")
+	RunCommand("bash", "./install.sh")
 }
 
 func ConfigureNode(chain model.BlockchainInstallation) {
