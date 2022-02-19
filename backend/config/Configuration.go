@@ -2,6 +2,7 @@ package config
 
 import (
 	"cultivator.wurmatron.io/backend/model"
+	"cultivator.wurmatron.io/backend/storage"
 	"gorm.io/gorm"
 	"log"
 	"strconv"
@@ -21,7 +22,8 @@ var PowerPollFrequency int64
 var PowerPullIP []string
 
 func LoadOrSetupConfiguration(db *gorm.DB) {
-	Host = findOrSetConfigValue(map[string]interface{}{"type": "backend", "key": "host"}, db, "host", "localhost").Value // TODO Lookup current ip, set as default
+	storage.CreateTablesIfNeeded()
+	Host = findOrSetConfigValue(map[string]interface{}{"type": "backend", "key": "host"}, db, "host", "0.0.0.0").Value // TODO Lookup current ip, set as default
 	Port = toInt(findOrSetConfigValue(map[string]interface{}{"type": "backend", "key": "port"}, db, "port", "8123"))
 	StatusTimeoutInterval = toInt(findOrSetConfigValue(map[string]interface{}{"type": "backend", "key": "status_timeout_interval"}, db, "status_timeout_interval", "300"))
 	PowerPollFrequency = toInt(findOrSetConfigValue(map[string]interface{}{"type": "backend", "key": "power_pull_frequency"}, db, "power_pull_frequency", "60"))

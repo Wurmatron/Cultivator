@@ -1,6 +1,9 @@
 package model
 
+import "gorm.io/gorm"
+
 type Configuration struct {
+	gorm.Model
 	Blockchain string
 	Type       string
 	Key        string
@@ -9,6 +12,7 @@ type Configuration struct {
 }
 
 type Metrics struct {
+	gorm.Model
 	Blockchain string
 	Style      string
 	EntryType  string
