@@ -15,13 +15,13 @@ import (
 
 // TODO Temp
 var CurrentInstallation = model.BlockchainInstallation{
-	Name:              "chia",
-	Github:            "https://github.com/Chia-Network/chia-blockchain",
-	InstallDir:        "chia-blockchain",
-	LogFile:           "~/.chia/mainnet/log/debug.log",
-	ScriptDownloadURL: "https://raw.githubusercontent.com/Wurmatron/Cultivator/main/scripts/chia.zip",
-	Priority:          1,
-	ProtectedFiles:    []string{"~/.chia/mainnet/db/blockchain_v1_mainnet.sqlite", "~/.chia/mainnet/wallet/db/"},
+	Name:              "stai",
+	Github:            "https://github.com/STATION-I/stai-blockchain",
+	InstallDir:        "stai-blockchain",
+	LogFile:           "~/.stai/mainnet/log/debug.log",
+	ScriptDownloadURL: "https://raw.githubusercontent.com/Wurmatron/Cultivator/main/scripts/stai.zip",
+	Priority:          0,
+	ProtectedFiles:    []string{"~/.stai/mainnet/db/blockchain_v1_mainnet.sqlite", "~/.stai/mainnet/wallet/db/"},
 }
 
 func Start(configServer string) {
